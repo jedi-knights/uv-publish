@@ -1,8 +1,5 @@
-name: uv Publish
-description: >-
-  Publishes a Python package to any PyPI-compatible registry using uv,
-  with configurable retry logic for transient network failures.
-author: jedi-knights
+name: 'uv Publish by Jedi Knights'
+description: 'Publishes a Python package to any PyPI-compatible registry using uv, with configurable retry logic for transient network failures.'
 
 branding:
   icon: upload-cloud
