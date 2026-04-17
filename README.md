@@ -1,7 +1,5 @@
 # uv-publish
 
-[![Coverage](https://img.shields.io/badge/Coverage-0%25-red)](https://jedi-knights.github.io/uv-publish/)
-
 A GitHub Action that publishes a Python package to any PyPI-compatible registry using [uv](https://github.com/astral-sh/uv), with configurable retry logic for transient network failures.
 
 ## Usage
