@@ -1,0 +1,68 @@
+name: uv Publish
+description: >-
+  Publishes a Python package to any PyPI-compatible registry using uv,
+  with configurable retry logic for transient network failures.
+author: jedi-knights
+
+branding:
+  icon: upload-cloud
+  color: orange
+
+inputs:
+  publish-url:
+    description: The PyPI-compatible registry URL to publish to.
+    required: true
+  username:
+    description: Registry username.
+    required: true
+  password:
+    description: Registry password or API token.
+    required: true
+  dist-dir:
+    description: Directory containing the build artifacts (.whl and .tar.gz).
+    required: false
+    default: dist
+  max-attempts:
+    description: Maximum number of publish attempts before failing.
+    required: false
+    default: '3'
+  retry-delay-seconds:
+    description: Seconds to wait before the first retry. Doubles on each subsequent attempt.
+    required: false
+    default: '10'
+
+outputs:
+  artifact-count:
+    description: Number of artifacts published.
+    value: ${{ steps.publish.outputs.artifact-count }}
+
+runs:
+  using: composite
+  steps:
+    - name: Publish package
+      id: publish
+      shell: bash
+      env:
+        UV_PUBLISH_USERNAME: ${{ inputs.username }}
+        UV_PUBLISH_PASSWORD: ${{ inputs.password }}
+        _PUBLISH_URL: ${{ inputs.publish-url }}
+        _DIST_DIR: ${{ inputs.dist-dir }}
+        _MAX: ${{ inputs.max-attempts }}
+        _DELAY: ${{ inputs.retry-delay-seconds }}
+      run: |
+        DELAY=$_DELAY
+        for attempt in $(seq 1 "$_MAX"); do
+          echo "Attempt $attempt/$_MAX"
+          if uv publish --publish-url "$_PUBLISH_URL" "$_DIST_DIR"/*.whl "$_DIST_DIR"/*.tar.gz; then
+            COUNT=$(ls "$_DIST_DIR"/*.whl "$_DIST_DIR"/*.tar.gz 2>/dev/null | wc -l | tr -d ' ')
+            echo "artifact-count=$COUNT" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          if [ "$attempt" -lt "$_MAX" ]; then
+            echo "Retrying in ${DELAY}s..."
+            sleep "$DELAY"
+            DELAY=$((DELAY * 2))
+          fi
+        done
+        echo "ERROR: Publish failed after $_MAX attempts"
+        exit 1
